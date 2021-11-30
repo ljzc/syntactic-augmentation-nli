@@ -21,7 +21,8 @@ origin_training_dir = ".\\MNLI_1-1000\\MNLI" ## 放置原本的MNLI训练集的�
 augmentation_training_set_dir = ".\\MNLI_1-1000" ## 放置生成好的扩增训练集和命令行脚本的文件夹
 path_to_bert_base_modle = "..\\uncased_L-12_H-768_A-12" ## 存放预训练模型的文件夹
 path_to_bert_train_code = "..\\bert-master" ## bert模型训练代码的文件夹，其中由run_classifier.py
-path_to_hans = "..\\hans" ## hans训练集的文件夹
+path_to_hans = "..\\hans" ## hans项目文件夹
+path_to_hans_test_set = "..\\hans\\berts_of_a_feather" ## hans训练集文件夹
 
 
 ```
