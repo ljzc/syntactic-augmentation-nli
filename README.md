@@ -1,91 +1,42 @@
-# syntactic-augmentation-nli
+# 工具运行前的准备
 
-This repository contains the syntactic augmentation dataset to improve robustness in NLI, used in our ACL 2020 paper, [Syntactic Data Augmentation Increases Robustness to Inference Heuristics](https://arxiv.org/abs/2004.11999), by Junghyun Min<sup>1</sup>, Tom McCoy<sup>1</sup>, Dipanjan Das<sup>2</sup>, Emily Pitler<sup>2</sup>, and Tal Linzen<sup>1</sup>. A 7 minnute presentation on the paper can be accessed [here](https://slideslive.com/38928832/syntactic-data-augmentation-increases-robustness-to-inference-heuristics).
+## 下载
 
-<sup>1</sup>Department of Cognitive Science, Johns Hopkins University, Baltimore, MD
+- 安装tensorflow框架，如果使用bert原本的模型训练代码，则安装python2和tensorflow1.11.0
+- 下载 [MultiNLI]([MultiNLI (nyu.edu)](https://cims.nyu.edu/~sbowman/multinli/)) 的json文件`multinli_1.0_train.jsonl`
+- 下载[bert](https://github.com/google-research/bert)，并根据bert的说明下载预训练模型
+- 下载[MNLI训练集](https://dl.fbaipublicfiles.com/glue/data/MNLI.zip)
 
-<sup>2</sup>Google Research, New York, NY
+-  下载[HANS](https://github.com/tommccoy1/hans)测试集
 
-## Data
+## 路径配置
 
-Augmentation datasets are in the [`datasets`](https://github.com/Aatlantise/syntactic-augmentation-nli/tree/master/datasets) folder. Each file is named using the following abbreviations:
+`generate_all.py`
 
-Transformation strategies:
-- `inv`: inversion
-- `pass`: passivization
-- `comb`: combination of inversion and passivization
-- `chaos`: random shuffling condition
+```python
+raw_dataset_dir = ".\\raw" ## 用来放置生成的五个基本扩增集的文件目录
+augmentation_output_dir = ".\\datasets" ## 用来放置生成的30个实验扩增集的目录
+mnli_dir = os.path.expanduser('D:\\Documents\\se_learning\\automate-test\\syntactic-augmentation-nli\\multinli_1.0') ## 放置multinli_1.0_train.jsonl的文件夹
+origin_training_dir = ".\\MNLI_1-1000\\MNLI" ## 放置原本的MNLI训练集的文件夹
+augmentation_training_set_dir = ".\\MNLI_1-1000" ## 放置生成好的扩增训练集和命令行脚本的文件夹
+path_to_bert_base_modle = "..\\uncased_L-12_H-768_A-12" ## 存放预训练模型的文件夹
+path_to_bert_train_code = "..\\bert-master" ## bert模型训练代码的文件夹，其中由run_classifier.py
+path_to_hans = "..\\hans" ## hans训练集的文件夹
 
-Sentence pair:
-- `orig`: original premise as premise, tranformed hypothesis as hypothesis
-- `trsf`: original hypothesis as premise, transformed hypothesis as hypothesis
-
-Label:
-- `pos`: augmentation examples whose label is entailment
-- `neg`: augmentation examples whose label is nonentailment
-
-Size:
-- `small`: 101 examples
-- `medium`: 405 examples
-- `large`: 1215 examples
-
-For example, [`pass_trsf_pos_small.tsv`](https://github.com/Aatlantise/syntactic-augmentation-nli/tree/master/datasets/pass_trsf_pos_small.tsv) is an set of 101 passivization with transformed hypothesis examples whose labels are entailment. Also, please note that the negative combined transformed-hypothesis nonentailed datasets (`comb_trsf_neg_large.tsv`, etc) are not discussed or reported in our paper.
-
-Fields within each file are equivalent to the MNLI datasets downloadable from [GLUE](https://github.com/nyu-mll/GLUE-baselines). However, only four fields `index`, `sentence1` (premise), `sentence2` (hypothesis), and `gold_label` are populated. 
-
-## Script
-
-The attached `.tsv` data files were used to augment the MultiNLI training set in our experiments. They are randomly selected subsets or unions of subsets of transformations created by running [`generate_dataset.py`](https://github.com/Aatlantise/syntactic-augmentation-nli/tree/master/generate_dataset.py), which requires MultiNLI's json file `multinli_1.0_train.jsonl` to run. Simply modify the MNLI path argument before running `python2 generate_dataset.py`.
-
-This will create four files: `inv_orig.tsv`, `inv_trsf.tsv`, `pass_orig.tsv`, and `pass_trsf.tsv`. From these four files, individual augmentation sets similar to those included in the `datasets` folder can be created by subsetting and/or concatenating.
-
-## Config
-
-In the [`config`](https://github.com/Aatlantise/syntactic-augmentation-nli/tree/master/config) folder, `bert_config.json` contains BERT configurations, while `train.sh` and `hans_pred.sh` contain training, evaluation, and prediction parameters for running BERT's [`run_classifier.py`](https://github.com/google-research/bert/blob/master/run_classifier.py).
-
-## Training and evaluating on MNLI and HANS
-
-If you already haven't downloaded BERT and MNLI data, now is the time. You can download BERT from its [repository](https://github.com/google-research/bert), and MNLI data from running [download_glue_data.py](https://github.com/nyu-mll/GLUE-baselines/blob/master/download_glue_data.py). It includes files mentioned below like `train.tsv` and `test_matched.tsv`:
 
 ```
-python download_glue_data.py --data_dir ~/download/path --tasks MNLI
-```
 
-To finetune BERT with an augmented training set, you can concatenate an augmentation set to training set `train.tsv`:
+## 运行
 
-```
-shuf -n1215 inv_trsf.tsv > inv_trsf_large.tsv
-mv train.tsv train_orig.tsv
-cat train_orig.tsv inv_trsf_large.tsv > train.tsv
-```
+运行generate_all.py文件，可以在设置的`augmentation_training_set_dir`目录下看到所生成的带扩增的MNLI训练集，每个子目录是一个训练集，其中包含三个脚本：
 
-and finetune BERT as you would on an unaugmented set by running `train.sh`.
+| **脚本**          | **介绍**                               |
+| ----------------- | -------------------------------------- |
+| train.bat         | 运行扩增后的训练集，生成训练好的模型   |
+| hans_predict.bat  | 使用训练好的模型在hans测试集上进行预测 |
+| hans_evaluate.bat | 评估hans测试集上预测的结果             |
 
-Once the model is trained, it will also be evaluated on MNLI, and the results will be recorded in `eval_results.txt` in your output folder. It'll look something like this:
+依次运行这三个脚本即可完成论文中的实验。
 
-```
-eval_accuracy = 0.8471727
-eval_loss = 0.481841
-global_step = 36929
-loss = 0.48185167
-```
-
-Along with the results file, you'll also see checkpoint files starting with `model.ckpt-some-number`. They are model weights at a particular point in training, the higher the number, the closer it is to completion of training. If you used large augmentation, you'll have `model.ckpt-36929` as your trained model.
-
-To evaluate the model on HANS, you'll need to have downloaded scripts and datasets from [HANS](https://github.com/tommccoy1/hans). And, format `heuristics_evaluation_set.txt` to resemble `test_matched.tsv` and have fields `sentence1` (premise) and `sentence2` (hypothesis) as 9th and 10th fields. Other fields can be filled with dummy fillers. The formatted file will also need to be named `test_matched.tsv`, so it is a good idea to keep MNLI and HANS directories separate.
-
-Then, you can create the model's predictions on HANS with hans_pred.sh.
-
-Once it is finished, it will produce `test_results.tsv` in your output folder. To analyze it, you need to process the results:
-
-```
-python process_results.py
-python evaluate_heur_output.py preds.txt
-```
-
-This will output HANS performance by heuristic, by subcase, and by template.
-
-## License
-
-This repository is licenced under the MIT [license](https://github.com/Aatlantise/syntactic-augmentation-nli/tree/master/LICENSE.md).
+更多内容参考[原版readme文件]([syntactic-augmentation-nli/README.md at master · Aatlantise/syntactic-augmentation-nli (github.com)](https://github.com/Aatlantise/syntactic-augmentation-nli/blob/master/README.md))
 

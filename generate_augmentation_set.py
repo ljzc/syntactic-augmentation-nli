@@ -1,12 +1,8 @@
 import os.path
 import random
 
-raw_dataset_dir = ".\\raw"
-augmentation_output_dir = ".\\datasets"
-
-
-
-
+from generate_all import raw_dataset_dir
+from generate_all import augmentation_output_dir
 
 class AugmentationSetGenerator:
     def __init__(self, base_name, augmentation_lines, large_size=1215, medium_size=405, small_size=101):

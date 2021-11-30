@@ -8,11 +8,12 @@ import spacy
 import random
 
 
-mnli_dir = os.path.expanduser('D:\\Documents\\se_learning\\automate-test\\syntactic-augmentation-nli\\multinli_1.0')
+from generate_all import raw_dataset_dir as output_dir
+from generate_all import mnli_dir as mnli_dir
+
 mnli_train = os.path.join(mnli_dir, 'multinli_1.0_train.jsonl')
 mnli_headers = ['index', 'promptID', 'pairID', 'genre', 'sentence1_binary_parse', 'sentence2_binary_parse',
                 'sentence1_parse', 'sentence2_parse', 'sentence1', 'sentence2', 'label1', 'gold_label']
-output_dir = './raw/'
 
 nlp = spacy.load('en_core_web_sm')
 ner = nlp.create_pipe('ner')
@@ -45,7 +46,7 @@ r"""
 def get_vp_head(vp):
     head = None
     if vp.label() == 'VP':
-        while True:
+        while True: ## 这个循环用来跳过所有的情态动词和be动词，找到真正的实义动词。
             nested_vps = [x for x in vp[1:] if x.label() == 'VP']
             if len(nested_vps) == 0:
                 break
@@ -99,8 +100,10 @@ r"""
 
 def get_np_head(np):
     head = None
-    if np.label() == 'NP' and np[0].label() == 'DT':  # 要满足这个传入的组成部分是一个名词短语，并且这个名词短语的第一个词是一个限定词
-        head_candidates = [x for x in np[1:] if x.label().startswith('NN')]  # NN开头的代表名词，包括名词原型、复数、专有名词、专有名词复数
+    if np.label() == 'NP' and np[0].label() == 'DT':
+        # 要满足这个传入的组成部分是一个名词短语，并且这个名词短语的第一个词是一个限定词
+        head_candidates = [x for x in np[1:] if x.label().startswith('NN')]
+        # NN开头的代表名词，包括名词原型、复数、专有名词、专有名词复数
         if len(head_candidates) == 1:  # 只接受含有一个名词的名词短语
             # > 1: Complex noun phrases unlikely to be useful
             # 0: Pronominal subjects like "many"
@@ -288,8 +291,10 @@ class SentenceConvertor:
 
         arguments = tuple(x.label() for x in self.sentence[1][1:])
 
-        if (arguments != ('NP',) or  # srguments代表的应该是动词之后的部分，要保留的句子中这个部分应该只有一个名词短语, 可能排除的情况有：宾语从句、介宾短语、情态动词加动词词组
-                en.lemma(self.vp_head[0]) in ['be', 'have']):  # 这里是为了排除本身的被动语态和过去完成时
+        if (arguments != ('NP',) or
+                # arguments代表的应该是动词之后的部分，要保留的句子中这个部分应该只有一个名词短语,
+                # 可能排除的情况有：宾语从句、介宾短语、情态动词加动词词组、被动语态、完成时、虚拟语气等等、由直接宾语和间接宾语两个宾语组成的句子
+                en.lemma(self.vp_head[0]) in ['be', 'have']):  # 这里是为了排除类似于he is ...或者he has ...的句子
             self.sentence_valid = False
             return
 
@@ -328,10 +333,10 @@ class SentenceConvertor:
 
 def main(debug=False):
     files = [
-        open(output_dir + 'inv_orig.tsv', 'wb'),
-        open(output_dir + 'inv_trsf.tsv', 'wb'),
-        open(output_dir + 'pass_orig.tsv', 'wb'),
-        open(output_dir + 'pass_trsf.tsv', 'wb')
+        open(os.path.join(output_dir,'inv_orig.tsv'), 'wb'),
+        open(os.path.join(output_dir , 'inv_trsf.tsv'), 'wb'),
+        open(os.path.join(output_dir , 'pass_orig.tsv'), 'wb'),
+        open(os.path.join(output_dir , 'pass_trsf.tsv'), 'wb')
     ]
     w_inv_orig = tsv(files[0])
     w_inv_trsf = tsv(files[1])

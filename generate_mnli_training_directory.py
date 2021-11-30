@@ -2,9 +2,13 @@ import os
 import shutil
 import time
 
-origin_training_dir = ".\\MNLI_1-1000\\MNLI"
-output_dir = ".\\MNLI_1-1000"
-augmentation_set_dir = ".\\datasets"
+from generate_all import origin_training_dir
+from generate_all import augmentation_training_set_dir as output_dir
+from generate_all import augmentation_output_dir as augmentation_set_dir
+from generate_all import path_to_bert_base_modle
+from generate_all import path_to_bert_train_code
+from generate_all import path_to_hans
+from generate_all import path_to_hans_test_set
 
 augmentation_types = [
     'inv_orig',
@@ -29,10 +33,10 @@ augmentation_sizes = [
 
 
 training_bat_template = r"""
-SET BERT_BASE_DIR=D:\\Documents\\se_learning\\automate-test\\uncased_L-12_H-768_A-12
+SET BERT_BASE_DIR={path_to_bert_base_model}
 SET DATA_DIR={data_dir}
 SET OUTPUT_DIR={train_output_dir}
-SET BERT_DIR=D:/Documents/se_learning/automate-test/bert-master
+SET BERT_DIR={path_to_bert_train_code}
 
 :: #Finetune BERT and evaluate on MNLI
 
@@ -52,14 +56,14 @@ python run_classifier.py ^
   --num_train_epochs=3.0 ^
   --output_dir=%OUTPUT_DIR%
 pause
-"""
+""".format(path_to_bert_base_model=path_to_bert_base_modle.replace("\\", "\\\\"), path_to_bert_train_code=path_to_bert_train_code.replace("\\", "\\\\"), data_dir="{data_dir}", train_output_dir="{train_output_dir}")
 
 hans_predict_bat_template = r"""
-SET BERT_BASE_DIR=D:\\Documents\\se_learning\\automate-test\\uncased_L-12_H-768_A-12
-SET HANS_DIR=D:\\Documents\\se_learning\\automate-test\\hans\\berts_of_a_feather
+SET BERT_BASE_DIR={path_to_bert_base_model}
+SET HANS_DIR={path_to_hans_test_set}
 SET TRAINED_CLASSIFIER={train_output_dir}
 SET OUTPUT_DIR={predict_output_dir}
-SET BERT_DIR=D:/Documents/se_learning/automate-test/bert-master
+SET BERT_DIR={path_to_bert_train_code}
 cd %BERT_DIR%
 python run_classifier.py ^
   --task_name=MNLI ^
@@ -71,11 +75,11 @@ python run_classifier.py ^
   --max_seq_length=128 ^
   --output_dir=%OUTPUT_DIR%
 pause
-"""
+""".format(path_to_bert_base_model=path_to_bert_base_modle.replace("\\", "\\\\"), path_to_bert_train_code=path_to_bert_train_code.replace("\\", "\\\\"), path_to_hans_test_set=path_to_hans_test_set.replace("\\", "\\\\"), train_output_dir="{train_output_dir}", predict_output_dir="{predict_output_dir}")
 
 hans_evaluate_bat_template = r"""
 SET PREDICT_OUTPUT={predict_output_dir}
-SET HANS_DIR=D:\\Documents\\se_learning\\automate-test\\hans
+SET HANS_DIR={path_to_hans}
 
 
 cd %HANS_DIR%\\berts_of_a_feather\\files_for_replication
@@ -86,7 +90,7 @@ cd %HANS_DIR%
 python evaluate_heur_output.py %PREDICT_OUTPUT%\\preds.txt
 
 pause
-"""
+""".format(path_to_hans=path_to_hans.replace("\\", "\\\\"), predict_output_dir="{predict_output_dir}")
 
 def generate_augmented_training_dir(aug_type, size):
     if aug_type not in augmentation_types:
